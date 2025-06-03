@@ -1,0 +1,19 @@
+{
+  "name": "use-query-factory",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tanstack/react-query": "^5.80.2",
+    "axios": "^1.9.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
