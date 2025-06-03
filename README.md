@@ -4,9 +4,9 @@
 
 ## 🚀 What is this?
 
-This is a documented utility function that helps you create type-safe, reusable React Query hooks for your API calls. Instead of writing the same boilerplate over and over, you define your API structure once and get fully typed hooks that work seamlessly with React Query.
+This is a documented utility function that helps you create type-safe, reusable React Query hooks for your API calls using Axios. Instead of writing the same boilerplate over and over, you define your API structure once and get fully typed hooks that work seamlessly with React Query and Axios.
 
-The `createQueryHook` utility can be extended and customized for your specific use cases, making it a flexible foundation for your API layer.
+The `createQueryHook` utility can be extended and customized for your specific use cases, making it a flexible foundation for your Axios-based API layer.
 
 Perfect for developers who want:
 - 🎯 **Type safety** - Full TypeScript support with inference
