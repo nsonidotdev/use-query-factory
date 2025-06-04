@@ -1,31 +1,30 @@
-# 🏭 React Query Hook Factory
+# 🛠️ use-query-factory
 
-> A TypeScript-first utility function for creating strongly typed React Query hooks with reusable API patterns
+Hey! 👋 So I was getting tired of writing the same React Query + Axios boilerplate over and over, so I coded this little utility. Thought you might find it useful too!
 
-## 🚀 What is this?
+## What's this about? 🤔
 
-This is a documented utility function that helps you create type-safe, reusable React Query hooks for your API calls using Axios. Instead of writing the same boilerplate over and over, you define your API structure once and get fully typed hooks that work seamlessly with React Query and Axios.
+Basically, I made a `createQueryHook` function that lets you create type-safe React Query hooks without all the repetitive setup. It's nothing fancy - just a nice little helper that I've been copy-pasting into my projects.
 
-The `createQueryHook` utility can be extended and customized for your specific use cases, making it a flexible foundation for your Axios-based API layer.
+**What you can grab from this repo:**
+- 📋 **Copy the `createQueryHook` utility** - It's in `src/index.ts`, just copy it into your project!
+- 🎨 **Follow the API pattern** - There's a neat way to organize your API calls (`/src/api`) that makes everything super reusable (but totally optional)
 
-Perfect for developers who want:
-- 🎯 **Type safety** - Full TypeScript support with inference
-- 🔄 **Reusability** - Define once, use everywhere
-- 📦 **Organization** - Clean namespace-based API structure
-- ⚡ **DX** - Great developer experience with autocomplete
-- 🛠️ **Extensibility** - Customize and extend for your needs
+The main thing is the `createQueryHook` function - that's the real MVP here. The API organization pattern is more of a "hey, this worked well for me" kind of thing.
 
-## ⚡ Quick Start
+## Quick example 🚀
+
+Here's how it works (after you copy the `createQueryHook` function):
 
 ```tsx
-import { createQueryHook } from 'use-query-factory';
+import { createQueryHook } from './your-utils'; // wherever you put it
 import axios from 'axios';
 
-// 1. Create your hook factory
+// Create a hook for fetching user data
 const useUserQuery = createQueryHook<
-  { userId: string },  // Input type
-  { user: User },      // Output type
-  { include?: string } // Params type (query params)
+  { userId: string },  // What you need to make the request
+  { user: User },      // What the API returns
+  { include?: string } // Query params (optional)
 >({
   url: ({ userId }) => `/users/${userId}`,
   queryFn: async ({ axiosConfig }) => {
@@ -34,39 +33,28 @@ const useUserQuery = createQueryHook<
   }
 });
 
-// 2. Use it in your component
+// Use it like any other React Query hook
 function UserProfile() {
-  const { data, isLoading, queryKey } = useUserQuery({
+  const { data, isLoading } = useUserQuery({
     input: { userId: '123' },
     params: { include: 'posts' }
   });
 
   if (isLoading) return <div>Loading...</div>;
-
   return <div>Hello {data?.user.name}! 👋</div>;
 }
 ```
 
-## 📚 Detailed Usage
+## The API pattern I've been using 📁
 
-### 🏗️ Creating Reusable API Calls with Namespaces
-
-The recommended pattern is to organize your API calls using TypeScript namespaces:
+So here's a cool pattern I stumbled upon - organizing API calls with TypeScript namespaces. You don't *have* to do this, but it's been working really well for me:
 
 ```tsx
 // src/api/todos/get-one/index.ts
 export namespace GetOneTodo {
-  export type TInput = {
-    slug: string;
-  };
-
-  export type TOutput = {
-    todo: Todo;
-  };
-
-  export type TParams = Partial<{
-    verbose: boolean;
-  }>;
+  export type TInput = { slug: string };
+  export type TOutput = { todo: Todo };
+  export type TParams = Partial<{ verbose: boolean }>;
 
   export const url = (slug: string) => `/todos/${slug}`;
   export const useQuery = useTodoQuery; // Your hook instance
@@ -80,90 +68,73 @@ export const useTodoQuery = createQueryHook<
 >({
   url: ({ slug }) => GetOneTodo.url(slug),
   defaultParams: { verbose: true },
-  queryFn: async ({ axiosConfig, input, params }) => {
+  queryFn: async ({ axiosConfig, params }) => {
     const response = await axios({
       ...axiosConfig,
-      params: {
-        verbose: params?.verbose ? '1' : '0',
-      }
+      params: { verbose: params?.verbose ? '1' : '0' }
     });
     return response.data;
   }
 });
 ```
 
-Then use it in components:
+Then in your components:
 
 ```tsx
 function TodoPage() {
   const { data, queryKey } = GetOneTodo.useQuery({
     input: { slug: 'my-todo' },
-    params: { verbose: false } // Overrides default
+    params: { verbose: false }
   });
 
-  // Use queryKey for invalidation in mutations
+  // queryKey is perfect for cache invalidation
   const mutation = useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-    }
+    onSuccess: () => queryClient.invalidateQueries({ queryKey })
   });
 }
 ```
 
-### 🎛️ Advanced Features of `createQueryHook`
+Pretty neat, right? Everything's organized and you get full type safety! 🎯
 
-#### Argument Priority System 🔄
+## Some cool features ✨
 
-The utility uses a smart priority system where **instance arguments override factory arguments**:
+### Priority system
+
+The hook has this nice priority thing where your component props override the defaults:
 
 ```tsx
 const usePostsQuery = createQueryHook({
-  // Factory level - these are defaults
+  // Set some defaults
   defaultParams: { page: 1, limit: 10 },
   enabled: false,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-
+  staleTime: 5 * 60 * 1000,
   url: () => '/posts',
-  queryFn: async ({ axiosConfig }) => {
-    const response = await axios(axiosConfig);
-    return response.data;
-  }
+  queryFn: async ({ axiosConfig }) => axios(axiosConfig).then(r => r.data)
 });
 
-// Instance level - these override factory defaults
+// Override them in your component
 const { data } = usePostsQuery({
   input: null,
-  params: { page: 2, limit: 20 }, // ✅ Overrides defaultParams
-  enabled: true,                  // ✅ Overrides factory enabled
-  staleTime: 0,                   // ✅ Overrides factory staleTime
+  params: { page: 2, limit: 20 }, // ✅ Overrides defaults
+  enabled: true,                  // ✅ Overrides defaults
+  staleTime: 0,                   // ✅ Overrides defaults
 });
 ```
 
-#### Default Properties 🎯
+Also sets `refetchOnWindowFocus: false` by default because that's usually what you want 😅
 
-The factory sets sensible defaults:
+### Parameter transformation
 
-```tsx
-// These are automatically applied
-{
-  refetchOnWindowFocus: false, // 🚫 Won't refetch when window gains focus
-  // + all your factory options
-  // + all your instance options (highest priority)
-}
-```
-
-#### Parameter Transformation 🔄
-
-A common use case for the `queryFn` is transforming component-friendly parameters into query string-friendly formats:
+One thing I found super useful - you can transform your nice component props into ugly query string formats:
 
 ```tsx
 const usePostsQuery = createQueryHook<
   null,
   { posts: Post[] },
   {
-    tags: string[];           // Component passes array
-    published: boolean;       // Component passes boolean
-    dateRange: [Date, Date];  // Component passes Date objects
+    tags: string[];           // Nice array in component
+    published: boolean;       // Nice boolean in component
+    dateRange: [Date, Date];  // Nice Date objects in component
   }
 >({
   url: () => '/posts',
@@ -171,13 +142,9 @@ const usePostsQuery = createQueryHook<
     const response = await axios({
       ...axiosConfig,
       params: {
-        // Transform array to comma-separated string
+        // Transform to what the API actually wants
         tags: params?.tags?.join(','),
-
-        // Transform boolean to '1'/'0' string
         published: params?.published ? '1' : '0',
-
-        // Transform dates to ISO strings
         startDate: params?.dateRange?.[0]?.toISOString(),
         endDate: params?.dateRange?.[1]?.toISOString(),
       }
@@ -186,78 +153,71 @@ const usePostsQuery = createQueryHook<
   }
 });
 
-// Usage in component with developer-friendly types
+// Your component gets to use nice types
 const { data } = usePostsQuery({
   input: null,
   params: {
-    tags: ['react', 'typescript'],        // ✅ Array
-    published: true,                      // ✅ Boolean
-    dateRange: [new Date(), new Date()]   // ✅ Date objects
+    tags: ['react', 'typescript'],      // ✅ Array
+    published: true,                    // ✅ Boolean
+    dateRange: [new Date(), new Date()] // ✅ Date objects
   }
 });
 ```
 
-This pattern lets you keep component interfaces clean while handling the messy details of query string formatting in one place! 🎯
+So your components stay clean but the API gets what it needs! 🎯
 
-### 🏷️ Type Parameters Explained
+## The type parameters
+
+Just a quick breakdown of the generics:
 
 ```tsx
 createQueryHook<TInput, TOutput, TParams>({...})
 ```
 
-- **`TInput`** 📥 - Shape of data needed to build the request (like route params, IDs)
-- **`TOutput`** 📤 - Shape of the API response data
-- **`TParams`** 🔍 - Shape of URL query parameters (optional, defaults to `Record<string, unknown>`)
+- **`TInput`** - What you need to build the URL (like IDs, slugs, etc.)
+- **`TOutput`** - What the API returns
+- **`TParams`** - Query parameters (optional, defaults to `Record<string, unknown>`)
 
 ```tsx
-// Example with all types
 createQueryHook<
-  { userId: string; postId: string }, // TInput - route params
-  { post: Post; author: User },       // TOutput - API response
-  { include: string[]; draft: boolean } // TParams - query params
+  { userId: string; postId: string }, // Route params
+  { post: Post; author: User },       // API response
+  { include: string[]; draft: boolean } // Query params
 >({
   url: ({ userId, postId }) => `/users/${userId}/posts/${postId}`,
   queryFn: async ({ axiosConfig, input, params }) => {
-    // input is typed as { userId: string; postId: string }
-    // params is typed as { include?: string[]; draft?: boolean }
+    // input and params are fully typed here
     const response = await axios(axiosConfig);
-    return response.data; // Must match TOutput type
+    return response.data;
   }
 });
 ```
 
-## 🏗️ Reusable API Structure
+## Why the namespace pattern is pretty cool 🤷‍♂️
 
-The namespace pattern demonstrated in this utility creates a consistent, reusable structure for organizing API calls across your application.
+So that namespace thing I showed earlier? It's actually been working out really well. Here's why:
 
-### 🎯 Benefits for Development
-
-**Consistency Across Endpoints** 📋
+**Everything looks the same**
 ```tsx
-// Every API endpoint follows the same pattern
 export namespace GetUser { /* ... */ }
 export namespace GetPosts { /* ... */ }
 export namespace CreatePost { /* ... */ }
 ```
 
-**Predictable Structure** 🔄
-- `TInput` - Always defines what data is needed to make the request
-- `TOutput` - Always defines the expected response shape
-- `TParams` - Always defines query parameters
-- `url` - Always provides the endpoint URL function
-- `useQuery` - Always exports the hook for components
+**Predictable structure**
+- `TInput` - What you need for the request
+- `TOutput` - What comes back from the API
+- `TParams` - Query parameters
+- `url` - URL builder function
+- `useQuery` - The actual hook
 
-**Type Safety at Scale** 🛡️
+**Great IntelliSense**
 ```tsx
-// IntelliSense works perfectly across all endpoints
 const { data } = GetUser.useQuery({ input: { id: '123' } });
 const { data } = GetPosts.useQuery({ input: null, params: { page: 1 } });
 ```
 
-### 📈 How It Scales
-
-As your API grows, this pattern scales beautifully:
-
+**Scales nicely**
 ```
 src/api/
 ├── users/
@@ -275,30 +235,33 @@ src/api/
     └── create/
 ```
 
-**Developer Benefits** �‍💻
-- Instantly recognizable patterns across your codebase
-- Consistent structure makes maintenance easier
-- Refactoring is safer with strong typing
-- API changes are caught at compile time
-- Testing follows the same patterns
+Once you get used to it, everything just feels consistent and you know exactly where to find stuff! 🎯
 
-## ⚠️ Limitations
+## One small gotcha ⚠️
 
-### Always Pass Input Parameter 📝
-
-Even when your API doesn't need input parameters, you **must** pass the `input` property:
+You always need to pass the `input` parameter, even if it's `null`:
 
 ```tsx
-// ❌ This will cause TypeScript errors
+// ❌ TypeScript will complain
 const { data } = usePostsQuery({
   params: { page: 1 }
 });
 
-// ✅ Always include input, even if null
+// ✅ Always include input
 const { data } = usePostsQuery({
-  input: null, // Required!
+  input: null, // Even if you don't need it!
   params: { page: 1 }
 });
 ```
 
-**Happy querying! 🎉**
+## Where to find the code 📁
+
+- **Main utility**: `src/createQueryHook.ts` - Copy this into your project!
+- **Example usage**: Check out the `src/api/` folder for the namespace pattern examples
+- **Tests**: `src/__tests__/` if you want to see how it all works
+
+## Contributing 🤝
+
+If someone wants to create a `createMutationHook` or adapt `createQueryHook` for other HTTP clients (fetch, ky, etc.), I'd totally appreciate a PR!
+
+That's it! Hope this saves you some time like it did for me 😊
