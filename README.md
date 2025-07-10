@@ -7,10 +7,8 @@ Hey! 👋 So I was getting tired of writing the same React Query + Axios boilerp
 Basically, I made a `createQueryHook` function that lets you create type-safe React Query hooks without all the repetitive setup. It's nothing fancy - just a nice little helper that I've been copy-pasting into my projects.
 
 **What you can grab from this repo:**
-- 📋 **Copy the `createQueryHook` utility** - It's in `src/index.ts`, just copy it into your project!
+- 📋 **Copy the `createQueryHook` utility** - It's in `src/index.ts`, just copy it into your project and adjust to your requirements if needed!
 - 🎨 **Follow the API pattern** - There's a neat way to organize your API calls (`/src/api`) that makes everything super reusable (but totally optional)
-
-The main thing is the `createQueryHook` function - that's the real MVP here. The API organization pattern is more of a "hey, this worked well for me" kind of thing.
 
 ## Quick example 🚀
 
